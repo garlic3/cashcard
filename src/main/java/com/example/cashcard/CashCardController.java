@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 // tells Spring that this class is Component of type RestController
 // and capable of handling HTTP requests
 @RestController
@@ -27,15 +29,16 @@ public class CashCardController {
     // @PathVariable : makes Spring Web aware of the requestedId supplied in the HTTP
     @GetMapping("/{requestedId}")
     private ResponseEntity<CashCard> findById(@PathVariable Long requestedId){
-        // data management -> shouldn't be concerned
-        if(requestedId.equals(99L)){
-            CashCard cashCard = new CashCard(99L, 123.45);
-            return ResponseEntity.ok(cashCard);
+        Optional<CashCard> cashCardOptional = cashCardRepository.findById(requestedId);
+
+        if(cashCardOptional.isPresent()){
+            return ResponseEntity.ok(cashCardOptional.get());
         }else{
             return ResponseEntity.notFound().build();
         }
 
-//        CashCard cashCard = new CashCard(99L, 123.45);
-//        return ResponseEntity.ok(cashCard);
     }
+
+
+
 }
