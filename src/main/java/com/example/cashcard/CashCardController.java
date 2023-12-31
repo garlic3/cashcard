@@ -18,6 +18,7 @@ public class CashCardController {
     // @PathVariable : makes Spring Web aware of the requestedId supplied in the HTTP
     @GetMapping("/{requestedId}")
     private ResponseEntity<CashCard> findById(@PathVariable Long requestedId){
+        // data management -> shouldn't be concerned
         if(requestedId.equals(99L)){
             CashCard cashCard = new CashCard(99L, 123.45);
             return ResponseEntity.ok(cashCard);
