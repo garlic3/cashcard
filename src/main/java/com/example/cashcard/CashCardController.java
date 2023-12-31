@@ -13,6 +13,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/cashcards")
 public class CashCardController {
 
+    // Spring's Auto Configuration is utilizing its dependency injection(DI) framework,
+    // specifically constructor injection, to supply CashCardController with the correct implementation of
+    // CashCardRepository at runtime
+    private final CashCardRepository cashCardRepository;
+
+    public CashCardController(CashCardRepository cashCardRepository) {
+        this.cashCardRepository = cashCardRepository;
+    }
+
 
     // @GetMapping: marks a method as a handler method
     // @PathVariable : makes Spring Web aware of the requestedId supplied in the HTTP
