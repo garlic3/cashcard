@@ -1,5 +1,7 @@
 package com.example.cashcard;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
@@ -11,5 +13,7 @@ public interface CashCardRepository extends CrudRepository<CashCard, Long>, Pagi
     // Spring is trying to find a properly configured class to provide
     // during the dependency injection phase of Auto Configuration, but none qualify
 
+    CashCard findByIdAndOwner(Long id, String owner);
+    Page<CashCard> findByOwner(String owner, PageRequest pageRequest);
 
 }

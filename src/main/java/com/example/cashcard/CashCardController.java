@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,8 +33,9 @@ public class CashCardController {
     // @GetMapping: marks a method as a handler method
     // @PathVariable : makes Spring Web aware of the requestedId supplied in the HTTP
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId){
-        Optional<CashCard> cashCardOptional = cashCardRepository.findById(requestedId);
+    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal){
+        // Principal : holds our user's authenticated, authorized information
+        Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository.findByIdAndOwner(requestedId, principal.getName()));
 
         if(cashCardOptional.isPresent()){
             return ResponseEntity.ok(cashCardOptional.get());
@@ -44,9 +46,11 @@ public class CashCardController {
     }
 
     @PostMapping
-    private ResponseEntity<Void> createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ucb){
+    private ResponseEntity<Void> createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ucb, Principal principal){
+        CashCard cashCardWithOwner = new CashCard(null, newCashCardRequest.amount(), principal.getName());
+
         // saves a new CashCard for us, and returns the saved object with a unique id provided by the database
-        CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
+        CashCard savedCashCard = cashCardRepository.save(cashCardWithOwner);
         URI locationOfNewCashCard = ucb
                 .path("cashcards/{id}")
                 .buildAndExpand(savedCashCard.id())
@@ -56,9 +60,9 @@ public class CashCardController {
     }
 
     @GetMapping
-    private ResponseEntity<List<CashCard>> findAll(Pageable pageable){
+    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal){
         // PageRequest : Java Bean implementation of Pageable
-        Page<CashCard> page = cashCardRepository.findAll(
+        Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
                 PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),

@@ -19,6 +19,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     // Spring Data
     implementation 'org.springframework.data:spring-data-jdbc'
     // H2 database
