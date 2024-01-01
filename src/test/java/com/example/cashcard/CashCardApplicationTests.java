@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -31,9 +33,10 @@ class CashCardApplicationTests {
     void shouldReturnACashCardWhenDataIsSaved(){
 
         // restTemplate to make an HTTP GET request to endpoint /cashcards/99
+        //TODO: 2024.01.01  java.lang.IllegalAccessError 발생
         ResponseEntity<String> response = restTemplate
                 .withBasicAuth("sarah1", "abc123")
-                        .getForEntity("/cashcards/99", String.class);
+                .getForEntity("/cashcards/99", String.class);
 
         // inspect HTTP Response Status code
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -71,7 +74,8 @@ class CashCardApplicationTests {
         // In order to avoid "leaking" information about application,
         // Spring Security has configured Spring Web to return a generic 403 FORBIDDEN
         CashCard newCashCard = new CashCard(null, 250.00, null);
-       //TODO: 2024.01.01  java.lang.IllegalAccessError 발생
+        //TODO: 2024.01.01  java.lang.IllegalAccessError 발생
+        // 접근제한자 변경? 원인 정리할것(Repo, Controller, Config public -> default)
         ResponseEntity<Void> createResponse = restTemplate
                 .withBasicAuth("sarah1", "abc123")
                 .postForEntity("/cashcards", newCashCard, Void.class);
@@ -96,9 +100,8 @@ class CashCardApplicationTests {
 
     }
 
-
     @Test
-    @DirtiesContext // Spring to start with a clean state, as if those other tests hadn't been run
+//    @DirtiesContext // Spring to start with a clean state, as if those other tests hadn't been run
     void shouldReturnAllCashCardsWhenListIsRequested(){
         ResponseEntity<String> response = restTemplate
                 .withBasicAuth("sarah1", "abc123")
@@ -197,6 +200,66 @@ class CashCardApplicationTests {
         ResponseEntity<String> response = restTemplate
                 .withBasicAuth("sarah1", "abc123")
                 .getForEntity("/cashcards/102", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @DirtiesContext
+    void shouldUpdateAnExistingCashCard(){
+
+        CashCard cashCardUpdate = new CashCard(null, 19.99, null);
+        HttpEntity<CashCard> request = new HttpEntity<>(cashCardUpdate);
+
+        // exchange() : a more general version of the abcForEntity()
+        // requires the verb and the request entity to be supplied as parameters
+        /*
+            .getForEntity()
+            .exchange("/cashcards/99", HttpMethod.GET, new HttpEntity(null), String.class);
+         */
+
+        ResponseEntity<Void> response = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/99", HttpMethod.PUT, request, Void.class);
+
+        // 204 NO CONTENT : the action was successfully perfomed and no futher action is needed by caller
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<String> getResponse = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .getForEntity("/cashcards/99", String.class);
+
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        DocumentContext documentContext = JsonPath.parse(getResponse.getBody());
+
+        Number id = documentContext.read("$.id");
+        Double amount = documentContext.read("$.amount");
+        assertThat(id).isEqualTo(99);
+        assertThat(amount).isEqualTo(19.99);
+
+    }
+
+    @Test
+    void shouldNotUpdateACashCardThatDoesNotExist(){
+        CashCard unknownCard = new CashCard(null, 19.99, null);
+        HttpEntity<CashCard> request = new HttpEntity<>(unknownCard);
+
+        ResponseEntity<Void> response = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/99999", HttpMethod.PUT, request, Void.class);
+
+        // Spring Security has configured Spring Web to return a generic 403 FORBIDDEN in most error conditions
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // 위의 테스트와 같은 결과가 나오지만 추후 수정 가능성을 고려하여 남겨둔다
+    @Test
+    void shouldNotUpdateACashCardThatIsOwnedBySomeoneElse(){
+        CashCard kumarsCard = new CashCard(null, 333.33, null);
+        HttpEntity<CashCard> request = new HttpEntity<>(kumarsCard);
+        ResponseEntity<Void> response = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/102", HttpMethod.PUT, request, Void.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
