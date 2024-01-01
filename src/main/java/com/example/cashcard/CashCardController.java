@@ -35,10 +35,10 @@ class CashCardController {
     private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal){
 
         // Principal : holds our user's authenticated, authorized information
-        Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository.findByIdAndOwner(requestedId, principal.getName()));
+        CashCard cashCard = findCashCard(requestedId, principal);
 
-        if(cashCardOptional.isPresent()){
-            return ResponseEntity.ok(cashCardOptional.get());
+        if(cashCard != null){
+            return ResponseEntity.ok(cashCard);
         }else{
             return ResponseEntity.notFound().build();
         }
@@ -79,7 +79,7 @@ class CashCardController {
     @PutMapping("/{requestedId}")
     private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody CashCard cashCardUpdate, Principal principal){
         // 기존 cashCard
-        CashCard cashCard = cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
+        CashCard cashCard = findCashCard(requestedId, principal);
 
         if(cashCard != null){
             // 새로운 cashCard
@@ -90,6 +90,11 @@ class CashCardController {
 
         return ResponseEntity.notFound().build();
 
+    }
+
+    // helper method
+    private CashCard findCashCard(Long requestId, Principal principal){
+        return cashCardRepository.findByIdAndOwner(requestId, principal.getName());
     }
 
 
